@@ -53,6 +53,7 @@
           <textarea id="nota" rows="3"></textarea>
         </label>
         <button type="submit" class="boton-comenzar">Enviar</button>
+        <p id="estado" role="status"></p>
       </form>
     </section>
     <section class="tarjeta">
@@ -69,6 +70,15 @@
   <script>
     const SUPABASE_URL = 'https://qchqxqhwjqoycrzvqpoi.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_cdEQ4VfkmyXsQd9hSU3Y2Q_5VzAJJUC';
+    const estado = document.getElementById('estado');
+    function mostrarEstado(texto, esError = false) {
+      estado.textContent = texto;
+      estado.style.color = esError ? '#b42318' : '#1e6fd9';
+    }
+
+    if (!window.supabase) {
+      mostrarEstado('No se cargó la librería de Supabase. Revisa tu conexión a internet.', true);
+    }
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     async function cargarRegistros() {
@@ -79,8 +89,12 @@
       const lista = document.getElementById('lista-registros');
       lista.innerHTML = '';
       if (error) {
+        mostrarEstado('Error al cargar registros: ' + error.message, true);
         lista.innerHTML = '<tr><td colspan="3">No se pudieron cargar los registros: ' + error.message + '</td></tr>';
         return;
+      }
+      if (data.length === 0) {
+        lista.innerHTML = '<tr><td colspan="3">Todavía no hay registros.</td></tr>';
       }
       for (const r of data) {
         const fila = document.createElement('tr');
@@ -97,20 +111,22 @@
       e.preventDefault();
       const seleccion = document.querySelector('input[name="estado"]:checked');
       if (!seleccion) {
-        alert('Selecciona un estado de ánimo del 1 al 5.');
+        mostrarEstado('Selecciona un estado de ánimo del 1 al 5.', true);
         return;
       }
+      mostrarEstado('Guardando...');
       const { error } = await supabase.from('registros_animo').insert({
         nombre: document.getElementById('nombre').value,
         estado_animo: Number(seleccion.value),
         nota: document.getElementById('nota').value
       });
       if (error) {
-        alert('No se pudo guardar: ' + error.message);
+        mostrarEstado('No se pudo guardar: ' + error.message, true);
         return;
       }
       e.target.reset();
       document.getElementById('nombre').value = 'Persona Ficticia 1';
+      mostrarEstado('Registro guardado.');
       cargarRegistros();
     });
 
