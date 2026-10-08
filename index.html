@@ -48,6 +48,73 @@
       <tr><td>Daniel Kahneman</td><td>Israelí-estadounidense</td><td>1934–2024</td><td>Economía conductual</td><td>Sesgos cognitivos; Nobel de Economía 2002</td></tr>
     </tbody>
   </table>
+  <h2>Formulario de estado de ánimo</h2>
+  <form id="form-animo">
+    <label>Nombre ficticio
+      <input type="text" id="nombre" value="Persona Ficticia 1" required>
+    </label>
+    <fieldset>
+      <legend>Estado de ánimo (1 = muy bajo, 5 = muy bueno)</legend>
+      <label><input type="radio" name="estado" value="1"> 1</label>
+      <label><input type="radio" name="estado" value="2"> 2</label>
+      <label><input type="radio" name="estado" value="3"> 3</label>
+      <label><input type="radio" name="estado" value="4"> 4</label>
+      <label><input type="radio" name="estado" value="5"> 5</label>
+    </fieldset>
+    <label>Nota
+      <textarea id="nota" rows="3"></textarea>
+    </label>
+    <button type="submit" class="boton-comenzar">Enviar</button>
+  </form>
+  <h2>Registros guardados</h2>
+  <ul id="lista-registros"></ul>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://qchqxqhwjqoycrzvqpoi.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_cdEQ4VfkmyXsQd9hSU3Y2Q_5VzAJJUC';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function cargarRegistros() {
+      const { data, error } = await supabase
+        .from('registros_animo')
+        .select('*')
+        .order('created_at', { ascending: false });
+      const lista = document.getElementById('lista-registros');
+      lista.innerHTML = '';
+      if (error) {
+        lista.textContent = 'No se pudieron cargar los registros: ' + error.message;
+        return;
+      }
+      for (const r of data) {
+        const li = document.createElement('li');
+        li.textContent = `${r.nombre} · ánimo ${r.estado_animo} · ${r.nota || 'sin nota'}`;
+        lista.appendChild(li);
+      }
+    }
+
+    document.getElementById('form-animo').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const seleccion = document.querySelector('input[name="estado"]:checked');
+      if (!seleccion) {
+        alert('Selecciona un estado de ánimo del 1 al 5.');
+        return;
+      }
+      const { error } = await supabase.from('registros_animo').insert({
+        nombre: document.getElementById('nombre').value,
+        estado_animo: Number(seleccion.value),
+        nota: document.getElementById('nota').value
+      });
+      if (error) {
+        alert('No se pudo guardar: ' + error.message);
+        return;
+      }
+      e.target.reset();
+      document.getElementById('nombre').value = 'Persona Ficticia 1';
+      cargarRegistros();
+    });
+
+    cargarRegistros();
+  </script>
   <script>
     document.getElementById('fecha-actual').textContent = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   </script>
